@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+@theme {
+  --color-steam-bg: #1b2838;
+  --color-steam-accent: #1a9fff;
+  --color-steam-card: #2a475e;
+  --color-steam-cardhover: #3a5a73;
+  --color-steam-hover: #66c0f4;
+  --color-steam-text: #c7d5e0;
+  --color-steam-dark: #171a21;
+  --color-steam-muted: #8f98a0;
+  --color-steam-border: #3c4d5c;
+
+  --animate-fade-in: fadeIn 0.4s ease-out forwards;
+  --animate-spin-slow: spin 1.5s linear infinite;
+
+  @keyframes fadeIn {
+    0% { opacity: 0; transform: translateY(10px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+}
+
+:root {
+  --background: #1b2838;
+  --foreground: #c7d5e0;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Inter', sans-serif;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #171a21;
+}
+::-webkit-scrollbar-thumb {
+    background: #3c4d5c;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #66c0f4;
+}
+
+/* Glassmorphism/Steam modal */
+.modal-overlay {
+    background-color: rgba(23, 26, 33, 0.85);
+    backdrop-filter: blur(4px);
+}
+
+.highlight-alert {
+    box-shadow: 0 0 0 2px #ef4444, 0 0 15px rgba(239, 68, 68, 0.4);
+    border-color: #ef4444 !important;
+}
+
+/* Loading spinner */
+.loader {
+    border: 3px solid rgba(102, 192, 244, 0.2);
+    border-bottom-color: #1a9fff;
+    border-radius: 50%;
+    display: inline-block;
+    box-sizing: border-box;
+    animation: rotation 1s linear infinite;
+}
+
+@keyframes rotation {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Hover de imagem tratado via Tailwind group-hover:scale-105 no GameCard */
