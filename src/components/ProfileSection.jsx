@@ -3,7 +3,7 @@ import GameCard from './GameCard';
 import { AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export default function ProfileSection({ onMonitor, isMonitored, onCardClick }) {
+export default function ProfileSection({ onMonitor, isMonitored, onCardClick, profile }) {
   const [isAnalyzing, setIsAnalyzing] = useState(true);
   const [profileResult, setProfileResult] = useState(null);
   const [error, setError] = useState(null);
@@ -16,8 +16,9 @@ export default function ProfileSection({ onMonitor, isMonitored, onCardClick }) 
         // Simular pequeno atraso de rede para mostrar skeleton e dar "Premium feel"
         await new Promise(resolve => setTimeout(resolve, 600));
 
-        // Envia um perfil simulado já que o usuário "logou" e o sistema detectou
-        const res = await fetch(`/api/wishlist?profile=authenticated_user_mock`);
+        // Usa o SteamID da sessão autenticada; fallback para demo quando ausente.
+        const profileParam = encodeURIComponent(profile || 'authenticated_user_mock');
+        const res = await fetch(`/api/wishlist?profile=${profileParam}`);
         const data = await res.json();
 
         if (!res.ok) throw new Error(data.error ?? `Erro ${res.status}`);
@@ -46,7 +47,7 @@ export default function ProfileSection({ onMonitor, isMonitored, onCardClick }) 
     loadAutomatedWishlist();
 
     return () => { isMounted = false; };
-  }, []);
+  }, [profile]);
 
   return (
     <section className="space-y-8">

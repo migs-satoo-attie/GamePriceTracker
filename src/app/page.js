@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Header from '../components/Header';
 import LoginScreen from '../components/LoginScreen';
@@ -14,17 +14,47 @@ import { ExternalLink, MessageCircle } from 'lucide-react';
 export default function Home() {
   const { monitoredGames, addGame, removeGame, isMonitored } = useMonitoredGames();
   const [selectedGame, setSelectedGame] = useState(null);
-  
-  // Simulated Auth State
+
+  // Estado de autenticação real (sessão Steam OpenID via cookie).
   const [isLogged, setIsLogged] = useState(false);
+  const [user, setUser] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  // Ao montar, verifica se já existe uma sessão ativa.
+  useEffect(() => {
+    let active = true;
+    fetch('/api/auth/me')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (active && data?.authenticated) {
+          setIsLogged(true);
+          setUser(data.user);
+        }
+      })
+      .catch(() => {})
+      .finally(() => active && setAuthChecked(true));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch {
+      // ignora falha de rede no logout
+    }
+    setIsLogged(false);
+    setUser(null);
+  };
 
   return (
     <div className="min-h-screen flex flex-col font-sans selection:bg-primary/30 selection:text-primary">
-      <Header isLogged={isLogged} onLogout={() => setIsLogged(false)} />
+      <Header isLogged={isLogged} user={user} onLogout={handleLogout} />
 
       <main className="flex-grow w-full">
         <AnimatePresence mode="wait">
-          {!isLogged ? (
+          {!authChecked ? null : !isLogged ? (
             <motion.div
               key="login"
               initial={{ opacity: 0 }}
@@ -43,6 +73,7 @@ export default function Home() {
               className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-12"
             >
               <ProfileSection
+                profile={user?.steamId}
                 onMonitor={addGame}
                 isMonitored={isMonitored}
                 onCardClick={setSelectedGame}

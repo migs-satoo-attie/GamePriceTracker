@@ -9,10 +9,9 @@ export default function LoginScreen({ onLogin }) {
 
   const handleLoginClick = () => {
     setIsLoading(true);
-    // Simulate auth delay for UX
-    setTimeout(() => {
-      onLogin();
-    }, 1500);
+    // Redireciona para o fluxo real de autenticação Steam OpenID (back-end).
+    // Após o callback, a sessão é criada (cookie) e o app detecta via /api/auth/me.
+    window.location.href = '/api/auth/steam/login';
   };
 
   return (

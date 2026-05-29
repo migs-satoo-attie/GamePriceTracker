@@ -2,7 +2,7 @@ import { Tags, LogOut } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion } from 'framer-motion';
 
-export default function Header({ isLogged, onLogout }) {
+export default function Header({ isLogged, onLogout, user }) {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
       <div className="max-w-7xl mx-auto flex items-center justify-between h-16 px-4 sm:px-6">
@@ -34,11 +34,11 @@ export default function Header({ isLogged, onLogout }) {
           >
             <div className="hidden sm:flex items-center gap-3">
               <div className="text-right">
-                <p className="text-sm font-medium text-white leading-none">Usuário Conectado</p>
-                <p className="text-xs text-muted-foreground mt-1">Conta Premium</p>
+                <p className="text-sm font-medium text-white leading-none">{user?.username || 'Usuário Conectado'}</p>
+                <p className="text-xs text-muted-foreground mt-1">Conta Steam</p>
               </div>
               <div className="w-9 h-9 rounded-full bg-secondary border border-border flex items-center justify-center overflow-hidden">
-                <img src="https://avatars.githubusercontent.com/u/9919?s=200&v=4" alt="Avatar" className="w-full h-full object-cover" />
+                <img src={user?.avatar || 'https://avatars.githubusercontent.com/u/9919?s=200&v=4'} alt="Avatar" className="w-full h-full object-cover" />
               </div>
             </div>
             
