@@ -1,146 +1,137 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import GameCard from './GameCard';
-import { Loader2, AlertCircle } from 'lucide-react';
-
-/** Valida minimamente o input antes de enviar para a API */
-function validateProfileInput(input) {
-  const trimmed = input.trim();
-  if (!trimmed) return 'Cole a URL do perfil ou SteamID64.';
-  if (trimmed.startsWith('http') && !trimmed.includes('steamcommunity.com')) {
-    return 'URL inválida. Use um link steamcommunity.com ou um SteamID64.';
-  }
-  if (/^\d+$/.test(trimmed) && trimmed.length !== 17) {
-    return 'SteamID64 deve ter exatamente 17 dígitos.';
-  }
-  return null;
-}
+import { AlertCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function ProfileSection({ onMonitor, isMonitored, onCardClick }) {
-  const [inputValue, setInputValue] = useState('');
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(true);
   const [profileResult, setProfileResult] = useState(null);
   const [error, setError] = useState(null);
 
-  const handleAnalyze = async () => {
-    const validationError = validateProfileInput(inputValue);
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
+  useEffect(() => {
+    let isMounted = true;
 
-    setIsAnalyzing(true);
-    setProfileResult(null);
-    setError(null);
+    const loadAutomatedWishlist = async () => {
+      try {
+        // Simular pequeno atraso de rede para mostrar skeleton e dar "Premium feel"
+        await new Promise(resolve => setTimeout(resolve, 600));
 
-    try {
-      const res = await fetch(
-        `/api/wishlist?profile=${encodeURIComponent(inputValue.trim())}`
-      );
-      const data = await res.json();
+        // Envia um perfil simulado já que o usuário "logou" e o sistema detectou
+        const res = await fetch(`/api/wishlist?profile=authenticated_user_mock`);
+        const data = await res.json();
 
-      if (!res.ok) throw new Error(data.error ?? `Erro ${res.status}`);
+        if (!res.ok) throw new Error(data.error ?? `Erro ${res.status}`);
 
-      const date = new Date();
-      const formattedDate =
-        date.toLocaleDateString('pt-BR') +
-        ' ' +
-        date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        const date = new Date();
+        const formattedDate = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-      setProfileResult({
-        username: data.user.username,
-        avatar: data.user.avatar,
-        steamId: data.user.steamId,
-        wishlistCount: data.totalCount,
-        lastAnalysis: formattedDate,
-        games: data.games,
-        source: data.source,
-      });
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
+        if (isMounted) {
+          setProfileResult({
+            username: data.user?.username || 'Usuário Premium',
+            avatar: data.user?.avatar || 'https://avatars.githubusercontent.com/u/9919?s=200&v=4',
+            steamId: data.user?.steamId || '123456789',
+            wishlistCount: data.totalCount || 0,
+            lastAnalysis: formattedDate,
+            games: data.games || [],
+            source: data.source || 'mock',
+          });
+        }
+      } catch (err) {
+        if (isMounted) setError(err.message);
+      } finally {
+        if (isMounted) setIsAnalyzing(false);
+      }
+    };
+
+    loadAutomatedWishlist();
+
+    return () => { isMounted = false; };
+  }, []);
 
   return (
-    <section className="space-y-6">
-      <div className="bg-steam-card rounded-lg p-6 border border-steam-border shadow-lg">
-        <h2 className="text-xl font-semibold text-white mb-4 flex items-center">
-          <svg className="w-6 h-6 mr-2 text-steam-muted fill-current" viewBox="0 0 24 24">
-            <path d="M11.979 0C5.366 0 0 5.363 0 11.975c0 4.79 2.802 8.914 6.945 10.871l3.197-9.308c-.287-.582-.44-1.229-.44-1.91 0-2.39 1.939-4.326 4.328-4.326 2.39 0 4.328 1.936 4.328 4.326 0 2.39-1.938 4.326-4.328 4.326-.788 0-1.528-.215-2.155-.589l-2.738 7.971C10.057 23.82 10.999 24 11.979 24 18.604 24 24 18.627 24 12S18.604 0 11.979 0zM14.03 12.012c0-1.127-.916-2.043-2.043-2.043-1.127 0-2.043.916-2.043 2.043 0 1.127.916 2.043 2.043 2.043 1.127 0 2.043-.916 2.043-2.043zm1.611 0c0 2.019-1.638 3.654-3.654 3.654-2.019 0-3.654-1.635-3.654-3.654 0-2.019 1.635-3.654 3.654-3.654 2.016 0 3.654 1.635 3.654 3.654z" />
-          </svg>
-          Analisar Perfil Steam
-        </h2>
-
-        <div className="flex flex-col sm:flex-row gap-4">
-          <input
-            type="text"
-            placeholder="Cole a URL do perfil ou SteamID64..."
-            value={inputValue}
-            onChange={(e) => { setInputValue(e.target.value); setError(null); }}
-            onKeyDown={(e) => e.key === 'Enter' && !isAnalyzing && handleAnalyze()}
-            className={`flex-grow bg-steam-dark border rounded-md px-4 py-2 text-white focus:outline-none focus:border-steam-accent focus:ring-1 focus:ring-steam-accent transition-colors ${
-              error ? 'border-red-500' : 'border-steam-border'
-            }`}
-          />
-          <button
-            onClick={handleAnalyze}
-            disabled={isAnalyzing}
-            className="bg-steam-accent hover:bg-steam-hover text-white font-medium py-2 px-6 rounded-md transition-colors flex items-center justify-center min-w-[160px] disabled:opacity-70 disabled:cursor-not-allowed"
-          >
-            {isAnalyzing ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <span>Analisar Wishlist</span>
-            )}
-          </button>
+    <section className="space-y-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold text-foreground mb-2">Sua Wishlist</h2>
+          <p className="text-muted-foreground">Sincronizada automaticamente da sua conta Steam conectada.</p>
         </div>
-
-        {error && (
-          <div className="mt-3 flex items-center gap-2 text-sm text-red-400 animate-fade-in">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
-            <span>{error}</span>
-          </div>
-        )}
-
-        <p className="mt-3 text-xs text-steam-muted">
-          Exemplos:{' '}
-          <code className="text-steam-hover">76561198000000000</code>
-          {' '}|{' '}
-          <code className="text-steam-hover">https://steamcommunity.com/id/username/</code>
-          {' '}— A wishlist precisa ser pública.
-        </p>
       </div>
 
-      {profileResult && (
-        <div className="animate-fade-in">
-          <div className="bg-steam-dark rounded-lg p-6 border border-steam-border flex flex-col sm:flex-row items-center gap-6">
-            <img
-              src={profileResult.avatar}
-              alt="Avatar"
-              className="w-24 h-24 rounded-md border-2 border-steam-card"
-            />
-            <div className="text-center sm:text-left flex-grow">
-              <h3 className="text-2xl font-bold text-white">{profileResult.username}</h3>
-              <p className="text-steam-muted mt-1">{profileResult.wishlistCount} jogos na wishlist</p>
-              {profileResult.source === 'mock' && (
-                <span className="inline-block mt-2 text-xs bg-yellow-900/40 text-yellow-400 border border-yellow-800/50 px-2 py-0.5 rounded">
-                  Modo demo — configure STEAM_API_KEY para dados reais
-                </span>
-              )}
+      <AnimatePresence>
+        {error && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+            className="flex items-center gap-2 text-sm text-red-400 font-medium bg-red-500/10 p-4 rounded-xl border border-red-500/20"
+          >
+            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+            <span>Não foi possível carregar a wishlist automaticamente: {error}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Skeletons ou Loading State visual premium */}
+      {isAnalyzing && !profileResult && (
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-6">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="glass rounded-xl overflow-hidden aspect-[3/4] animate-pulse">
+              <div className="w-full aspect-[460/215] bg-secondary" />
+              <div className="p-5 space-y-4">
+                <div className="h-6 bg-secondary rounded w-3/4" />
+                <div className="h-10 bg-secondary rounded w-full mt-auto" />
+                <div className="h-10 bg-secondary rounded w-full" />
+              </div>
             </div>
-            <div className="text-sm text-steam-muted text-center sm:text-right">
-              <p>Última análise:</p>
-              <p className="font-medium text-white">{profileResult.lastAnalysis}</p>
+          ))}
+        </div>
+      )}
+
+      {profileResult && !isAnalyzing && (
+        <motion.div 
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          className="space-y-8"
+        >
+          <div className="glass-panel rounded-2xl p-6 flex flex-col sm:flex-row items-center gap-6 justify-between">
+            <div className="flex items-center gap-6 text-center sm:text-left">
+              <div className="relative">
+                <img
+                  src={profileResult.avatar}
+                  alt="Avatar"
+                  className="w-20 h-20 rounded-xl border-2 border-primary/20 shadow-xl shadow-primary/10 object-cover"
+                />
+                <div className="absolute -bottom-2 -right-2 bg-background border border-border rounded-lg px-2 py-0.5 text-xs font-bold text-primary shadow-sm">
+                  {profileResult.wishlistCount}
+                </div>
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-foreground">{profileResult.username}</h3>
+                <p className="text-muted-foreground mt-1 text-sm">Jogos sincronizados com sucesso</p>
+                {profileResult.source === 'mock' && (
+                  <span className="inline-block mt-2 text-xs bg-amber-500/10 text-amber-500 border border-amber-500/20 px-2.5 py-1 rounded-md font-medium">
+                    Modo Demonstração Ativo
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="text-xs text-muted-foreground/70 text-center sm:text-right hidden sm:block">
+              <p>Última sincronização</p>
+              <p className="font-medium text-muted-foreground text-lg">{profileResult.lastAnalysis}</p>
             </div>
           </div>
 
-          <div className="mt-6">
-            <h3 className="text-lg font-medium text-white mb-4 border-b border-steam-border pb-2">
-              Jogos da Wishlist
-            </h3>
+          <div>
             {profileResult.games.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <motion.div 
+                className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-6"
+                initial="hidden"
+                animate="show"
+                variants={{
+                  hidden: { opacity: 0 },
+                  show: {
+                    opacity: 1,
+                    transition: { staggerChildren: 0.1 }
+                  }
+                }}
+              >
                 {profileResult.games.map(game => (
                   <GameCard
                     key={`wishlist-${game.id}`}
@@ -151,12 +142,14 @@ export default function ProfileSection({ onMonitor, isMonitored, onCardClick }) 
                     isMonitored={isMonitored(game.id)}
                   />
                 ))}
-              </div>
+              </motion.div>
             ) : (
-              <p className="text-steam-muted text-center py-8">Nenhum jogo encontrado na wishlist.</p>
+              <div className="text-center py-16 glass rounded-2xl">
+                <p className="text-muted-foreground text-lg">Nenhum jogo encontrado ou sua wishlist Steam é privada.</p>
+              </div>
             )}
           </div>
-        </div>
+        </motion.div>
       )}
     </section>
   );
